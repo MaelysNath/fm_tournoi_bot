@@ -1,0 +1,53 @@
+# Dépendances et builds
+node_modules/
+dist/
+build/
+out/
+
+# Fichiers de logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Système et éditeurs de code
+.DS_Store           # macOS
+Thumbs.db           # Windows
+desktop.ini         # Windows
+.vscode/            # Visual Studio Code
+.idea/              # IntelliJ, WebStorm
+*.sublime-workspace # Sublime Text
+*.sublime-project   # Sublime Text
+*.swp               # Vim backup files
+
+# Environnement
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Cache et temporaires
+.cache/
+.tmp/
+*.cache
+
+# Fichiers de test
+coverage/
+.nyc_output/
+
+# Configurations spécifiques (facultatif)
+package-lock.json
+yarn.lock
+
+# Fichiers Ubuntu/Linux
+*~                   # Fichiers de sauvegarde (temporaire)
+*.pid                # Fichiers de processus
+*.pid.lock           # Fichiers de verrouillage de processus
+*.seed               # Fichiers de seed database
+*.pidfile            # Fichiers PID pour gestion de processus
+*.swp                # Fichiers de swap
+*.swo                # Fichiers de swap
+*.bak                # Fichiers de backup
+*.orig               # Fichiers de sauvegarde de fusion
