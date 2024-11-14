@@ -12,14 +12,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Système et éditeurs de code
-.DS_Store           # macOS
 Thumbs.db           # Windows
 desktop.ini         # Windows
 .vscode/            # Visual Studio Code
-.idea/              # IntelliJ, WebStorm
-*.sublime-workspace # Sublime Text
-*.sublime-project   # Sublime Text
-*.swp               # Vim backup files
+
 
 # Environnement
 .env
@@ -39,7 +35,6 @@ coverage/
 
 # Configurations spécifiques (facultatif)
 package-lock.json
-yarn.lock
 
 # Fichiers Ubuntu/Linux
 *~                   # Fichiers de sauvegarde (temporaire)
