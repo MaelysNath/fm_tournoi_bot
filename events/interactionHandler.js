@@ -11,11 +11,12 @@ module.exports = async (client) => {
             try {
                 await command.execute(interaction);
             } catch (error) {
-                console.error("Erreur lors de l'exécution de la commande:", error);
+                console.error("Erreur lors de l'exécution de la commande :", error);
                 logErrorToDiscord(error, "Commande");
+
                 if (!interaction.replied && !interaction.deferred) {
                     await interaction.reply({
-                        content: "Erreur lors de l'exécution de cette commande!",
+                        content: "Erreur lors de l'exécution de cette commande !",
                         ephemeral: true
                     });
                 }
@@ -27,6 +28,7 @@ module.exports = async (client) => {
             if (customId.startsWith("upvote_") || customId.startsWith("downvote_")) {
                 const participantId = customId.split("_")[1];
                 let ongoingContestId;
+
                 const contestRef = ref(db, "meme_contests");
                 const snapshot = await get(contestRef);
                 if (snapshot.exists()) {
@@ -40,52 +42,64 @@ module.exports = async (client) => {
                 }
 
                 if (!ongoingContestId) {
-                    return interaction.reply({ content: "Aucun concours en cours trouvé.", ephemeral: true });
+                    if (!interaction.replied && !interaction.deferred) {
+                        return interaction.reply({ content: "Aucun concours en cours trouvé.", ephemeral: true });
+                    }
+                    return;
                 }
 
                 const participantRef = ref(db, `meme_contests/${ongoingContestId}/participants/${participantId}`);
                 try {
                     const participantSnapshot = await get(participantRef);
                     if (!participantSnapshot.exists()) {
-                        return interaction.reply({ content: "Participant(e) introuvable.", ephemeral: true });
+                        if (!interaction.replied && !interaction.deferred) {
+                            return interaction.reply({ content: "Participant(e) introuvable.", ephemeral: true });
+                        }
+                        return;
                     }
 
                     const participant = participantSnapshot.val();
                     if (userId === participantId) {
-                        return interaction.reply({ content: "Pov : l'auto upvote/downvote 🤮🤮", ephemeral: true });
+                        if (!interaction.replied && !interaction.deferred) {
+                            return interaction.reply({ content: "Pov : l'auto upvote/downvote 🤮🤮", ephemeral: true });
+                        }
+                        return;
                     }
 
                     const voteType = customId.startsWith("upvote") ? "upvote" : "downvote";
                     const userPreviousVote = participant.voters && participant.voters[userId];
-                    
+
                     let votesUpdate = {};
 
-                    // Cas où l'utilisateur a déjà voté dans une direction différente
+                    // Gestion des différents cas de vote
                     if (userPreviousVote && userPreviousVote !== voteType) {
-                        // Annule le vote précédent et applique le nouveau pour que le score reste correct
                         const resetVote = userPreviousVote === "upvote" ? -1 : 1;
                         const newVote = voteType === "upvote" ? 1 : -1;
                         votesUpdate.votes = increment(resetVote + newVote);
-                        votesUpdate[`voters/${userId}`] = voteType; // Enregistre le nouveau vote
+                        votesUpdate[`voters/${userId}`] = voteType;
                     } else if (!userPreviousVote) {
-                        // Si c'est la première fois que l'utilisateur vote, applique simplement le vote
                         const newVote = voteType === "upvote" ? 1 : -1;
                         votesUpdate.votes = increment(newVote);
                         votesUpdate[`voters/${userId}`] = voteType;
                     } else {
-                        // Cas où l'utilisateur a déjà voté dans la même direction, renvoie un message d'avertissement
-                        return interaction.reply({ content: "Vous avez déjà voté dans cette direction.", ephemeral: true });
+                        if (!interaction.replied && !interaction.deferred) {
+                            return interaction.reply({ content: "Vous avez déjà voté dans cette direction.", ephemeral: true });
+                        }
+                        return;
                     }
 
                     await update(participantRef, votesUpdate);
 
-                    await interaction.reply({
-                        content: `Votre ${voteType === "upvote" ? "vote positif" : "vote négatif"} a été enregistré !`,
-                        ephemeral: true
-                    });
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.reply({
+                            content: `Votre ${voteType === "upvote" ? "vote positif" : "vote négatif"} a été enregistré !`,
+                            ephemeral: true
+                        });
+                    }
                 } catch (error) {
-                    console.error("Erreur lors de la mise à jour du vote:", error);
+                    console.error("Erreur lors de la mise à jour du vote :", error);
                     logErrorToDiscord(error, "Vote");
+
                     if (!interaction.replied && !interaction.deferred) {
                         await interaction.reply({ content: "Erreur lors du vote. Veuillez réessayer.", ephemeral: true });
                     }

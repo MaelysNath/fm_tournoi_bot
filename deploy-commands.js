@@ -5,6 +5,8 @@ require('dotenv').config();
 const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
+
+
 // Charger les commandes
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);

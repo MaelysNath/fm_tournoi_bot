@@ -68,13 +68,12 @@ module.exports = {
                 name: channelName,
                 type: ChannelType.GuildText,
                 parent: categoryId,
-                permissionOverwrites: [
-                    {
-                        id: guild.id,
-                        allow: [PermissionsBitField.Flags.ViewChannel],
-                        deny: [PermissionsBitField.Flags.SendMessages],
-                    },
-                ],
+                permissionOverwrites: categoryChannel.permissionOverwrites.cache.map(overwrite => ({
+                    id: overwrite.id,
+                    allow: overwrite.allow,
+                    deny: overwrite.deny,
+                    type: overwrite.type
+                }))
             });
 
             // Télécharger l'image sur Cloudinary pour obtenir un lien permanent
@@ -124,7 +123,8 @@ module.exports = {
             const imageEmbed = new EmbedBuilder()
                 .setTitle("Image à télécharger et à modifier")
                 .setImage(uploadedImageUrl)
-                .setColor(0x00FF00);
+                .setColor(0x00FF00)
+                .setFooter({ text: "Pour participer: tapez /submit" });
 
             // Envoyer les embeds dans le nouveau salon
             await contestChannel.send({ embeds: [contestEmbed] });
@@ -141,25 +141,24 @@ module.exports = {
                     { name: "5. Date Limite", value: "Les soumissions doivent être faites avant la date limite spécifiée." },
                     { name: "6. Critères de Jugement", value: "Les mèmes seront évalués en fonction de l'originalité, de l'humour et de la créativité." }
                 )
-                .setFooter({ text: "Assurez-vous de bien lire et respecter toutes les règles du concours." })
+                .setFooter({ text: "Assurez-vous de bien lire et respecter toutes les règles de FRANCE MEMES." })
                 .setColor(0xFF5733);
 
             // Envoyer l'embed du règlement dans le salon du concours
             await contestChannel.send({ embeds: [rulesEmbed] });
 
             // Créer un salon pour soumettre les mèmes sous la même catégorie
-            const submissionChannelName = `soumissions-${contest.title.toLowerCase().replace(/\s+/g, '-')}`;
+            const submissionChannelName = `🎉┃${contest.title.toLowerCase().replace(/\s+/g, '-')}`;
             const submissionChannel = await guild.channels.create({
                 name: submissionChannelName,
                 type: ChannelType.GuildText,
                 parent: categoryId,
-                permissionOverwrites: [
-                    {
-                        id: guild.id,
-                        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory],
-                        deny: [PermissionsBitField.Flags.SendMessages],
-                    },
-                ],
+                permissionOverwrites: categoryChannel.permissionOverwrites.cache.map(overwrite => ({
+                    id: overwrite.id,
+                    allow: overwrite.allow,
+                    deny: overwrite.deny,
+                    type: overwrite.type
+                }))
             });
 
             // Ajouter l'ID du salon de soumission dans la base de données et changer le statut à "en cours"

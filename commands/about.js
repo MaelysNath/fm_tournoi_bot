@@ -17,7 +17,7 @@ module.exports = {
                 { name: 'Nom du Bot', value: botUser.username, inline: true },
                 { name: 'Développeuse', value: 'MaelysNath', inline: true },
                 { name: 'Description', value: "Je suis une appllication Discord créée spécialement pour le concours de mèmes avec différentes commandes utiles pour France Memes. Mon développement a été grandement facilité par MaelysNath, avec l'aide précieuse de ChatGPT pour le code !", inline: false },
-                { name: 'Code Source', value: '[Lien vers le code source](https://github.com/votre-repo)', inline: false }
+                { name: 'Code Source', value: '[Lien vers le code source](https://github.com/MaelysNath/fm_tournoi_bot)', inline: false }
             )
             .setFooter({ text: 'Inspirée du plugin du WTPBot (memes contests) Dev par Lotharie.' });
 

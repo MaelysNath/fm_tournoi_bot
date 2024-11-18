@@ -15,6 +15,8 @@ const client = new Client({
 
 client.commands = new Collection();
 
+
+
 // Chargement des commandes
 console.log("Chargement des commandes...");
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
