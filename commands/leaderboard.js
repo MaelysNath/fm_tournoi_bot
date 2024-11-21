@@ -5,7 +5,7 @@ require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('leaderboard_concours_meme')
+        .setName('leaderboard_contest')
         .setDescription('Afficher le classement des participant⸱e⸱s du concours de mèmes (top 10)'),
 
     async execute(interaction) {
@@ -42,7 +42,7 @@ module.exports = {
                 return interaction.editReply({
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle("📛 Pas de Concours Actuellement en Cours")
+                            .setTitle("📛 Pas de Concours actuellement en Cours")
                             .setDescription("Il n'y a actuellement aucun concours de mèmes en cours.")
                             .setColor(0xFF0000)
                     ]
@@ -92,29 +92,31 @@ module.exports = {
 
             // Créer l'embed du classement
             const leaderboardEmbed = new EmbedBuilder()
-                .setTitle(`🏆 Classement du Concours de Mèmes - ${ongoingContest.title}`)
-                .setColor(0x00FF00)
-                .setDescription("Voici le classement des 10 meilleur⸱e⸱s participant⸱e⸱s !")
-                .setFooter({ text: `Nombre total de votes : ${totalVotes}` })
-                .setTimestamp();
+            .setTitle(`🏆 Classement du Concours de Mèmes - ${ongoingContest.title}`)
+            .setColor(0x00FF00)
+            .setDescription("Voici le classement des 10 meilleur⸱e⸱s participant⸱e⸱s !")
+            .setFooter({ text: `Nombre total de votes : ${totalVotes}` })
+            .setTimestamp();
 
-            const medalEmojis = [':first_place:', ':second_place:', ':third_place:'];
+            const medalEmojis = [':trophy:', ':second_place:', ':third_place:'];
             top10.forEach((participant, index) => {
-                const medal = medalEmojis[index] || '🏅'; // Médaille pour les 3 premiers, émoji générique pour les suivants
-                leaderboardEmbed.addFields(
-                    {
-                        name: `${medal} ${participant.pseudo}`,
-                        value: `**Votes :** ${participant.votes || 0} \n [Voir la Participation](https://discord.com/channels/${interaction.guild.id}/${ongoingContest.submissionChannelId}/${participant.messageId})`,
-                        inline: false
-                    }
-                );
+            const medal = index < 3
+                ? medalEmojis[index] 
+                : `**#${index + 1}-**`; 
+            leaderboardEmbed.addFields(
+                {
+                    name: `${medal} <@${participant.pseudo}>`,
+                    value: `**Votes :** ${participant.votes || 0} \n [Voir sa création:](https://discord.com/channels/${interaction.guild.id}/${ongoingContest.submissionChannelId}/${participant.messageId})`,
+                    inline: false
+                }
+            );
             });
 
             // Ajouter le score et la position de l'utilisateur exécutant la commande, s'il n'est pas dans le top 10
             if (userRank >= 10) {
                 leaderboardEmbed.addFields(
                     {
-                        name: `🏅 Votre Position : **#${userRank + 1}**`,
+                        name: `📍 Votre Position : **#${userRank + 1}**`,
                         value: `**Votes :** ${userScore}`,
                         inline: false
                     }
@@ -124,7 +126,7 @@ module.exports = {
                 leaderboardEmbed.addFields(
                     {
                         name: `📍 Votre Position`,
-                        value: `Vous êtes dans le **top 10** à la position **#${userRank + 1}** avec **${userScore} votes** !`,
+                        value: `Vous êtes dans le **top 10** et vous êtes en **#${userRank + 1}** avec **${userScore} votes** !`,
                         inline: false
                     }
                 );

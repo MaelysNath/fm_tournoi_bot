@@ -207,7 +207,14 @@ module.exports = {
                         // Notification à l'utilisateur·rice ciblé·e
                         const targetUser = await interaction.client.users.fetch(userId);
                         const userEmbed = new EmbedBuilder()
-                            .setTitle(action === 'exclude' ? "⚠️ Vous avez été exclu·e du concours" : "📢 Votre participation a été modifiée ou supprimée")
+                        .setTitle(
+                            action === 'exclude'
+                                ? "⚠️ Vous avez été exclu·e du concours par la modération"
+                                : action === "remove_points"
+                                ? "🔄 Vos points ont été réinitialisés par la modération"
+                                : "🗑️ Votre participation a été supprimée par la modération"
+                        )
+                        
                             .setDescription(`**Motif :** ${reason}`)
                             .setColor(0xFF0000)
                             .setFooter({ text: "Pour toute question, contactez l'équipe de modération." });
@@ -250,9 +257,9 @@ function logAction(action, reason, modUser, interaction, targetUserId) {
     const logChannel = interaction.guild.channels.cache.get(process.env.LOG_CHANNEL_ID);
     if (!logChannel) return;
 
-    const actionText = action === 'exclude' ? 'exclu·e du concours' : action === 'remove_points' ? 'points réinitialisés' : 'participation supprimée';
+    const actionText = action === 'exclude' ? 'exclusion du concours' : action === 'remove_points' ? 'points réinitialisés' : 'participation supprimée';
     const logEmbed = new EmbedBuilder()
-        .setTitle("🔍 Action de Modération du Concours")
+        .setTitle("🔍 Meme contest MOD")
         .setDescription(`Un·e utilisateur·rice a eu son ${actionText}`)
         .addFields(
             { name: "Motif", value: reason },
@@ -260,7 +267,7 @@ function logAction(action, reason, modUser, interaction, targetUserId) {
             { name: "Utilisateur·rice Cible", value: `<@${targetUserId}>` }
         )
         .setColor(0xFF6347)
-        .setFooter({ text: "Journal des actions de modération" })
+        .setFooter({ text: "Ne pas supprimer ce log." })
         .setTimestamp();
 
     logChannel.send({ embeds: [logEmbed] });

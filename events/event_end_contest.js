@@ -117,16 +117,18 @@ async function endContestIfDue(client) {
 
         // Créer l'embed du classement
         const leaderboardEmbed = new EmbedBuilder()
-            .setTitle(`Classement du Concours de Mèmes - ${ongoingContest.title}`)
+            .setTitle(`🏆 Classement du Concours de Mèmes - ${ongoingContest.title}`)
             .setColor(0x00FF00)
             .setFooter({ text: `ID du concours: ${ongoingContest.id}` });
 
-        const medalEmojis = [':first_place:', ':second_place:', ':third_place:'];
+        const medalEmojis = [':trophy:', ':second_place:', ':third_place:'];
         leaderboard.forEach((participant, index) => {
-            const medal = medalEmojis[index] || '🏅';
+            const medal = index < 3
+                ? medalEmojis[index] 
+                : `**#${index + 1}-**`;
             leaderboardEmbed.addFields({
-                name: `${medal} ${participant.pseudo}`,
-                value: `Votes: ${participant.votes} \n [Voir la Participation](https://discord.com/channels/${guildId}/${submissionChannelId}/${participant.messageId})`,
+                name: `${medal} <@${participant.pseudo}>`,
+                value: `**Votes :** ${participant.votes} \n [Voir sa création](https://discord.com/channels/${guildId}/${submissionChannelId}/${participant.messageId})`,
                 inline: false
             });
         });

@@ -7,26 +7,26 @@ module.exports = {
         .setDescription('Affiche la liste des commandes disponibles en fonction de vos rôles'),
 
     async execute(interaction) {
-        // Définir l'ID du propriétaire du bot (à définir dans le fichier .env)
-        const botOwnerId = process.env.BOT_OWNER_ID; // Assurez-vous que BOT_OWNER_ID est défini dans votre fichier .env
+       
+        const botOwnerId = process.env.BOT_OWNER_ID; 
 
         // Liste des commandes avec leur niveau d'accès requis
         const commands = [
-            { name: '/about', description: "Affiche les informations sur l'application", roles: [] },
-            { name: '/ping', description: "Affiche des informations avancées sur la latence et les performances de l'app", roles: [] },
-            { name: '/contests', description: 'Affiche la liste complète des concours', roles: ['MOD','STAFF','ADMIN', 'OWNER'] },
-            { name: '/create_meme_contest', description: 'Créer un concours de mèmes', roles: ['STAFF', 'ADMIN', 'OWNER'] },
-            { name: '/edit_contest', description: 'Modifier un concours de mèmes existant', roles: ['STAFF', 'ADMIN', 'OWNER'] },
-            { name: '/end_contest', description: 'Forcer la fin d\'un concours de mèmes en cours', roles: ['STAFF', 'ADMIN', 'OWNER'] },
-            { name: '/forgive', description: 'Retirer votre participation au concours de mèmes', roles: [] },
-            { name: '/history', description: 'options de navigation et suppression', roles: ['STAFF','ADMIN', 'OWNER'] },
-            { name: '/leaderboard_contest', description: 'Afficher le classement des participant⸱e⸱s du concours de mèmes (top 10)', roles: [] },
-            { name: '/mod_contest', description: 'prendre des actions de modération', roles: ['MOD','STAFF','ADMIN', 'OWNER'] },
-            { name: '/start', description: 'Démarrer un concours de mème', roles: ['STAFF', 'ADMIN', 'OWNER'] },
-            { name: '/statuts', description: 'Afficher le statut d\'un concours de mèmes', roles: [] },
-            { name: '/submit', description: 'Soumettre un mème pour le concours', roles: ['STAFF', 'ADMIN', 'OWNER'] },
+            { name: '/about', description: "Afficher les informations sur l'application.", roles: [] },
+            { name: '/ping', description: "Afficher des informations avancées sur la latence et les performances de l'app.", roles: [] },
+            { name: '/contests', description: 'Afficher la liste complète des concours.', roles: ['MOD','STAFF','ADMIN', 'OWNER'] },
+            { name: '/create_meme_contest', description: 'Créer un concours de mèmes.', roles: ['STAFF', 'ADMIN', 'OWNER'] },
+            { name: '/edit_contest', description: 'Modifier un concours de mèmes existant.', roles: ['STAFF', 'ADMIN', 'OWNER'] },
+            { name: '/end_contest', description: 'Forcer la fin d\'un concours de mèmes en cours.', roles: ['STAFF', 'ADMIN', 'OWNER'] },
+            { name: '/forgive', description: 'Retirer votre participation au concours de mèmes.', roles: [] },
+            { name: '/history', description: 'Options de navigation et suppression.', roles: ['STAFF','ADMIN', 'OWNER'] },
+            { name: '/leaderboard_contest', description: 'Afficher le classement des participant⸱e⸱s du concours de mèmes (top 10).', roles: [] },
+            { name: '/mod_contest', description: 'Prendre des actions de modération.', roles: ['MOD','STAFF','ADMIN', 'OWNER'] },
+            { name: '/start', description: 'Démarrer un concours de mèmes.', roles: ['STAFF', 'ADMIN', 'OWNER'] },
+            { name: '/statuts', description: 'Afficher le statut d\'un concours de mèmes.', roles: [] },
+            { name: '/submit', description: 'Soumettre un mème pour le concours.', roles: ['STAFF', 'ADMIN', 'OWNER'] },
             { name: '/view', description: 'Afficher les informations de la participation à un concours de mèmes.', roles: [] },
-            // Ajoutez d'autres commandes ici avec leurs rôles requis
+            
         ];
 
         // Identifiants des rôles de votre serveur

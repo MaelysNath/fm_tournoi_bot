@@ -14,7 +14,7 @@ cloudinary.config({
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('start')
-        .setDescription('[STAFF/ADMIN] Démarrer un concours de mème')
+        .setDescription('[STAFF/ADMIN] Démarrer un concours de mèmes')
         .addStringOption(option =>
             option.setName('contest_id')
                 .setDescription("ID unique du concours de mèmes")
@@ -63,7 +63,7 @@ module.exports = {
             }
 
             // Créer le salon pour le concours sous la catégorie spécifiée
-            const channelName = `concours-${contest.title.toLowerCase().replace(/\s+/g, '-')}`;
+            const channelName = `📅┃${contest.title.toLowerCase().replace(/\s+/g, '-')}`;
             const contestChannel = await guild.channels.create({
                 name: channelName,
                 type: ChannelType.GuildText,
@@ -112,36 +112,37 @@ module.exports = {
                 .setTitle(contest.title)
                 .setDescription(contest.description)
                 .addFields(
-                    { name: "Date Limite", value: contest.deadline },
-                    { name: "Récompenses", value: contest.rewards || "Aucune" },
-                    { name: "Organisé par", value: contest.organizer.pseudo }
+                    { name: "📅 Date Limite: ", value: contest.deadline },
+                    { name: "🎁 Récompenses: ", value: contest.rewards || "pas de récompenses" },
+                    { name: "👤 Organisé par: ", value: contest.organizer.pseudo }
                 )
                 .setFooter({ text: `ID du concours: ${contestId}` })
                 .setColor(0x00FF00);
 
             // Créer l'embed de l'image du concours
             const imageEmbed = new EmbedBuilder()
-                .setTitle("Image à télécharger et à modifier")
+                .setTitle("✅ Template télécharger et à modifier")
                 .setImage(uploadedImageUrl)
                 .setColor(0x00FF00)
-                .setFooter({ text: "Pour participer: tapez /submit" });
+                .setFooter({ text: "✅ Pour participer: tapez /submit" });
 
             // Envoyer les embeds dans le nouveau salon
             await contestChannel.send({ embeds: [contestEmbed] });
             await contestChannel.send({ embeds: [imageEmbed] });
 
             const rulesEmbed = new EmbedBuilder()
-                .setTitle("Règlement du Concours")
-                .setDescription("Veuillez suivre les règles ci-dessous pour participer au concours.")
+                .setTitle("✅ Règlement du Concours")
+                .setDescription("Veuillez suivre les règles ci-dessous pour participer au concours :")
                 .addFields(
-                    { name: "1. Respect", value: "Soyez respectueux·euses envers tous les participant·e·s et organisateur·rice·s du concours." },
-                    { name: "2. Contenu Original", value: "Les mèmes soumis doivent être de votre propre création. Aucun plagiat ne sera toléré." },
-                    { name: "3. Image de Base", value: "Utilisez l'image fournie pour créer votre mème." },
-                    { name: "4. Limite de Soumissions", value: "Chaque participant·e ne peut soumettre qu'un mème." },
-                    { name: "5. Date Limite", value: "Les soumissions doivent être faites avant la date limite spécifiée." },
-                    { name: "6. Critères de Jugement", value: "Les mèmes seront évalués en fonction de l'originalité, de l'humour et de la créativité." }
+                    { name: "1️⃣. Respect", value: "Soyez respectueux·ses envers tous envers les personnes participantes ou organisant le concours." },
+                    { name: "2️⃣. Contenu Original", value: "Les mèmes soumis doivent être de votre propre création. Aucun plagiat ne sera toléré." },
+                    { name: "3️⃣. Image de Base", value: "Utilisez l'image fournie pour créer votre mème." },
+                    { name: "4️⃣. Limite de Soumission", value: "Chaque participant·e ne peut soumettre qu'un mème." },
+                    { name: "5️⃣. Date Limite", value: "Les soumissions doivent être faites avant la date limite spécifiée." },
+                    { name: "6️⃣. Critères de Jugement", value: "Les mèmes seront évalués par les membres et la modération en fonction de l'originalité, de l'humour et de la créativité." },
+                    { name: "7️⃣. Récompenses", value: "La ou les récompenses seront attribuées au plus tard une semaine après la fin du concours. Aucune réclamation ne pourra être faite passé cette date."},
                 )
-                .setFooter({ text: "Assurez-vous de bien lire et respecter toutes les règles de FRANCE MEMES." })
+                .setFooter({ text: "✅ Assurez-vous de bien lire et respecter toutes les règles de FRANCE MEMES." })
                 .setColor(0xFF5733);
 
             // Envoyer l'embed du règlement dans le salon du concours

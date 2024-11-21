@@ -139,7 +139,7 @@ module.exports = {
                     new ButtonBuilder()
                         .setCustomId(`upvote_${participantId}`)
                         .setLabel('UPVOTE')
-                        .setStyle(ButtonStyle.Primary)
+                        .setStyle(ButtonStyle.Success)
                         .setEmoji('👍'),
                     new ButtonBuilder()
                         .setCustomId(`downvote_${participantId}`)

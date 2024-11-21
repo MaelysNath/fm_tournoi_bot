@@ -142,11 +142,11 @@ module.exports = {
                 .setTitle("🎉 Concours de Mèmes Créé !")
                 .setDescription("Votre concours de mèmes a été créé avec succès. Voici les détails :")
                 .addFields(
-                    { name: "Titre", value: title },
-                    { name: "Description", value: description },
-                    { name: "Date Limite", value: deadline },
-                    { name: "Récompenses", value: rewards || "Aucune spécifiée" },
-                    { name: "ID du Concours", value: `\`\`\`${contestId}\`\`\`` }
+                    { name: "✏️ Titre", value: title },
+                    { name: "📜 Description", value: description },
+                    { name: "📅 Date Limite", value: deadline },
+                    { name: "🎁 Récompenses", value: rewards || "Aucune spécifiée" },
+                    { name: "🆔 ID du Concours", value: `\`\`\`${contestId}\`\`\`` }
                 )
                 .setColor(0x1D82B6)
                 .setFooter({ text: "Utilisez la commande /contests pour retrouver l'ID et les informations" });

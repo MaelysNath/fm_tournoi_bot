@@ -129,6 +129,7 @@ module.exports = {
                                     .setTitle("Participation Retirée")
                                     .setDescription("Votre participation au concours de mèmes a été retirée avec succès.")
                                     .setColor(0x00FF00)
+                                    .setFooter({ text: "Vous pouvez participer à nouveau à tout moment" })
                             ],
                             components: []
                         });
