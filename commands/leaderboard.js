@@ -105,8 +105,8 @@ module.exports = {
                 : `**#${index + 1}-**`; 
             leaderboardEmbed.addFields(
                 {
-                    name: `${medal} <@${participant.pseudo}>`,
-                    value: `**Votes :** ${participant.votes || 0} \n [Voir sa création:](https://discord.com/channels/${interaction.guild.id}/${ongoingContest.submissionChannelId}/${participant.messageId})`,
+                    name: `${medal} ${participant.pseudo}`,
+                    value: `**Votes :** ${participant.votes || 0} \n [Voir la création](https://discord.com/channels/${interaction.guild.id}/${ongoingContest.submissionChannelId}/${participant.messageId})`,
                     inline: false
                 }
             );
