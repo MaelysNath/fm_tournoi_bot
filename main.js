@@ -1,6 +1,7 @@
 // main.js
 const { Client, GatewayIntentBits, Collection, REST, Routes } = require("discord.js");
 const fs = require("fs");
+const path = require('path');
 const dotenv = require("dotenv");
 const { logErrorToDiscord } = require('./utils/errorLogger');
 dotenv.config();
@@ -50,6 +51,16 @@ client.once("ready", async () => {
 // Importer les gestionnaires d'événements
 require('./events/readyHandler')(client);  // Gestionnaire "ready"
 require('./events/interactionHandler')(client);
+
+const eventFiles = fs.readdirSync(path.join(__dirname, 'events')).filter(file => file.endsWith('.js'));
+
+for (const file of eventFiles) {
+    const event = require(`./events/${file}`);
+    if (event.name) {
+        client.on(event.name, (...args) => event.execute(...args));
+    }
+}
+
 
 // Gestion globale des erreurs
 process.on('unhandledRejection', (error) => {
