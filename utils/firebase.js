@@ -1,6 +1,6 @@
 // utils/firebase.js
 const { initializeApp } = require("firebase/app");
-const { getDatabase, ref, get, update, increment } = require("firebase/database");
+const { getDatabase, ref, set, get, push, remove, update, increment } = require("firebase/database");
 require("dotenv").config(); // Charger les variables d'environnement
 
 // Configuration Firebase
@@ -49,4 +49,4 @@ async function performSecureOperation() {
 }
 
 // Exportation des éléments nécessaires
-module.exports = { db, ref, get, update, increment, verifyAccess, performSecureOperation };
+module.exports = { db, set, ref, push, remove, get, update, increment, verifyAccess, performSecureOperation };
