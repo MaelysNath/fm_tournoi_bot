@@ -47,39 +47,9 @@ client.once("ready", async () => {
     }
 });
 
-// Gestion centralisée des interactions
-client.on("interactionCreate", async (interaction) => {
-    try {
-        if (interaction.isCommand()) {
-            // Commandes slash
-            const command = client.commands.get(interaction.commandName);
-            if (!command) return;
 
-            await command.execute(interaction);
-        } else if (interaction.isButton()) {
-            // Boutons (approve/reject/close)
-            const customId = interaction.customId;
 
-            if (customId.startsWith("approve_") || customId.startsWith("reject_")) {
-                const voteHandler = require("./handlers/voteHandler");
-                await voteHandler(interaction);
-            } else if (customId.startsWith("close_")) {
-                const closeHandler = require("./handlers/closeHandler");
-                await closeHandler(interaction);
-            }
-        } else if (interaction.isModalSubmit()) {
-            // Modaux
-            const modalSubmitHandler = require("./handlers/modalSubmitHandler");
-            await modalSubmitHandler(interaction);
-        }
-    } catch (error) {
-        console.error("Erreur lors de l'interaction :", error);
-        interaction.reply({
-            content: "Une erreur est survenue lors du traitement de votre interaction.",
-            ephemeral: true,
-        });
-    }
-});
+
 
 
 

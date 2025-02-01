@@ -2,9 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Chan
 const { getDatabase, ref, get, update } = require('firebase/database');
 const { WebhookClient } = require('discord.js');
 const cloudinary = require('cloudinary').v2;
-require('dotenv').config();
-
-// Configurer Cloudinary
+require('dotenv').config();// Configurer Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -87,13 +85,14 @@ module.exports = {
             const leaderboard = Object.values(participants)
                 .filter(participant => participant.status !== 'excluded')
                 .sort((a, b) => b.votes - a.votes)
-                .slice(0, 10);
+                .slice(0, 10); // Top 10 participants
 
             if (leaderboard.length === 0) {
                 return interaction.editReply({ content: 'Aucun participant⸱e⸱s éligible pour le concours, dommage.', ephemeral: true });
             }
 
-            const leaderboardEmbed = new EmbedBuilder()
+            // Classement complet (top 10)
+            const fullLeaderboardEmbed = new EmbedBuilder()
                 .setTitle(`🏆 Classement du Concours de Mèmes - ${ongoingContest.title}`)
                 .setColor(0x00FF00)
                 .setFooter({ text: `ID du concours: ${ongoingContest.id}` });
@@ -101,18 +100,40 @@ module.exports = {
             const medalEmojis = [':trophy:', ':second_place:', ':third_place:'];
             leaderboard.forEach((participant, index) => {
                 const medal = index < 3
-                ? medalEmojis[index] 
-                : `**#${index + 1}-**`;
-                leaderboardEmbed.addFields(
+                    ? medalEmojis[index]
+                    : `**#${index + 1}-**`;
+                fullLeaderboardEmbed.addFields(
                     {
-                    name: `${medal} ${participant.pseudo}`,
-                    value: `**Votes :** ${participant.votes} \n [Voir la création](https://discord.com/channels/${guildId}/${submissionChannelId}/${participant.messageId})`,
-                    inline: false
-                });
+                        name: `${medal} ${participant.pseudo}`,
+                        value: `**Votes :** ${participant.votes} \n [Voir la création](https://discord.com/channels/${guildId}/${submissionChannelId}/${participant.messageId})`,
+                        inline: false
+                    }
+                );
+            });
+
+            // Classement réduit (top 5)
+            const top5 = leaderboard.slice(0, 5);
+            const reducedLeaderboardEmbed = new EmbedBuilder()
+                .setTitle(`🏆 Classement Final - ${ongoingContest.title} (Top 5)`)
+                .setColor(0xFFD700)
+                .setFooter({ text: `ID du concours: ${ongoingContest.id}` });
+
+            top5.forEach((participant, index) => {
+                const medal = index < 3
+                    ? medalEmojis[index]
+                    : `**#${index + 1}-**`;
+                reducedLeaderboardEmbed.addFields(
+                    {
+                        name: `${medal} ${participant.pseudo}`,
+                        value: `**Votes :** ${participant.votes} \n [Voir la création](https://discord.com/channels/${guildId}/${submissionChannelId}/${participant.messageId})`,
+                        inline: false
+                    }
+                );
             });
 
             const winner = leaderboard[0];
 
+            // Création de l'embed pour le gagnant avec un lien vers sa soumission
             // Récupérer l'avatar du gagnant de manière sécurisée
             let winnerAvatarUrl;
             try {
@@ -136,25 +157,24 @@ module.exports = {
             });
 
             const winnerImageUrl = winner.imageUrl;
-            const editedImage = await cloudinary.uploader.upload(winnerImageUrl, {
-                transformation: [
-                    { width: 2000, crop: "limit" },
-                    { overlay: { font_family: "Arial", font_size: 60, text: winner.pseudo }, gravity: "south_east", opacity: 30, x: 20, y: 20 },
-                    { width: 800, crop: "scale" }
-                ]
-            });
-
             const winnerEmbed = new EmbedBuilder()
                 .setTitle(`🎉 Félicitations ${winner.pseudo} !`)
+                .setDescription(`🎁 Tu viens de remporter : ${ongoingContest.rewards}\n\n📎 [Voir la soumission gagnante](https://discord.com/channels/${guildId}/${submissionChannelId}/${winner.messageId})`)
                 .setDescription(`🎁 Tu viens de remporter :  ${ongoingContest.rewards}`)
-                .setImage(editedImage.secure_url)
                 .setThumbnail(editedThumbnail.secure_url)
                 .setColor(0xFFD700)
                 .setFooter({ text: `ID du concours: ${ongoingContest.id}` });
 
+            // Publier le classement complet dans le salon de soumission
+            await submissionChannel.send({
+                content: `Voici le classement complet du concours "${ongoingContest.title}" :`,
+                embeds: [fullLeaderboardEmbed]
+            });
+
+            // Annoncer le top 5 via le webhook
             await webhookClient.send({
-                content: `# <@&${process.env.PUTAPING_ID}> Le concours de mèmes "${ongoingContest.title}" est maintenant terminé ! Voici le classement final :`,
-                embeds: [leaderboardEmbed, winnerEmbed]
+                content: `# <@&${process.env.PUTAPING_ID}> Le concours de mèmes "${ongoingContest.title}" est maintenant terminé ! Voici le classement final (Top 5) :`,
+                embeds: [reducedLeaderboardEmbed, winnerEmbed]
             });
 
             await update(ref(db, `meme_contests/${ongoingContest.id}`), {
