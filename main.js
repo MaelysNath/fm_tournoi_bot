@@ -84,7 +84,7 @@ client.on("interactionCreate", async (interaction) => {
 
 
 // Importer les gestionnaires d'événements (memes contest)
-/*require('./events/readyHandler')(client);  
+require('./events/readyHandler')(client);  
 require('./events/interactionHandler')(client);
 
 const eventFiles = fs.readdirSync(path.join(__dirname, 'events')).filter(file => file.endsWith('.js'));
@@ -95,7 +95,7 @@ for (const file of eventFiles) {
         client.on(event.name, (...args) => event.execute(...args));
     }
 }
-*/
+
 // Gestion des erreurs globales
 process.on("unhandledRejection", (error) => {
     console.error("Unhandled promise rejection:", error);
