@@ -1,122 +1,129 @@
-const { ref, db, get, remove } = require('../utils/firebase');
-const cloudinary = require('cloudinary').v2;
+const { ref, db, get, update } = require('../utils/firebase');
+const axios = require('axios');
+const { PermissionsBitField, EmbedBuilder, ChannelType, WebhookClient } = require('discord.js');
 
 module.exports = async (interaction) => {
   try {
-    const [action, memeKey] = interaction.customId.split('_');
+    const customId = interaction.customId;
+    const userId = interaction.user.id;
 
-    // On ne traite que l'action "close"
-    if (action !== 'close') return;
-
-    const staffRoleId = process.env.STAFF_ROLE_ID;
-
-    // Vérification de la permission : réponse immédiate si non autorisé
-    if (!interaction.member.roles.cache.has(staffRoleId)) {
-      return interaction.reply({
-        content: 'Vous n’avez pas la permission de fermer cette demande.',
-        ephemeral: true,
-      });
-    }
-
-    // Dès que l’on sait que le traitement va être plus long,
-    // on différera la réponse pour éviter l’erreur "Unknown interaction"
     await interaction.deferReply({ ephemeral: true });
 
-    const memeRef = ref(db, `memes/${memeKey}`);
-    const memeSnapshot = await get(memeRef);
+    const params = customId.split('_');
+    if (params.length < 3) {
+      console.error(`❌ Erreur : Format de customId incorrect -> ${customId}`);
+      return interaction.editReply({ content: "❌ Erreur interne : Format de l'interaction invalide." });
+    }
 
-    if (!memeSnapshot || !memeSnapshot.exists()) {
-      return interaction.followUp({
-        content: 'Ce meme n’existe plus.',
+    const [action, type, uniqueId] = params;
+    if (!uniqueId || (type !== 'meme' && type !== 'emoji')) {
+      console.error(`❌ Erreur : Type ou ID incorrect -> type: ${type}, uniqueId: ${uniqueId}`);
+      return interaction.editReply({ content: "❌ Erreur : Type de demande inconnu." });
+    }
+
+    console.log(`🔍 Tentative de clôture de l'élément (${type}) avec ID: ${uniqueId}`);
+
+    const itemRef = ref(db, type === 'meme' ? `memes/${uniqueId}` : `emoji_requests/${uniqueId}`);
+    const snapshot = await get(itemRef);
+    if (!snapshot.exists()) {
+      return interaction.editReply({ 
+        content: `❌ Cette demande de ${type === 'meme' ? 'mème' : 'emoji'} n'existe plus.`,
         ephemeral: true,
       });
     }
 
-    const memeData = memeSnapshot.val();
+    const itemData = snapshot.val();
 
-    if (!memeData.name || !memeData.description) {
-      return interaction.followUp({
-        content: 'Les données du meme sont incomplètes ou corrompues.',
-        ephemeral: true,
-      });
+    // Vérification des permissions STAFF
+    const member = await interaction.guild.members.fetch(userId);
+    if (!member.roles.cache.has(process.env.STAFF_ROLE_ID)) {
+      return interaction.editReply({ content: "❌ Vous n'avez pas la permission de clore cette demande." });
     }
 
-    // Utilisation des clés correctes pour la comparaison des votes
-    const votesUp = memeData.votes?.upvotes || 0;
-    const votesDown = memeData.votes?.downvotes || 0;
+    const { upvotes = 0, downvotes = 0 } = itemData.votes || {};
+    console.log(`🔢 Votes - Acceptations: ${upvotes}, Refus: ${downvotes}`);
+    let isAccepted = upvotes > downvotes ? true : downvotes > upvotes ? false : null;
 
-    const channel = interaction.channel;
+    const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_NOTIFICATION_URL });
 
-    // Suppression des messages associés (embed et vidéo)
-    if (memeData.messageId) {
-      const embedMessage = await channel.messages.fetch(memeData.messageId).catch(() => null);
-      if (embedMessage) await embedMessage.delete();
-    }
-    if (memeData.videoMessageId) {
-      const videoMessage = await channel.messages.fetch(memeData.videoMessageId).catch(() => null);
-      if (videoMessage) await videoMessage.delete();
-    }
+    const closureEmbed = new EmbedBuilder()
+      .setTitle(`FRANCE MEMES Requestsᴮᵉᵗᵃ : ${type === 'meme' ? 'mème' : 'emoji'}`)
+      .addFields(
+        { name: '📌 Nom/Titre', value: itemData.name },
+        { name: '📝 Description', value: itemData.description },
+        { name: '👤 Demandé(e) par', value: `<@${itemData.submittedBy}>` },
+        { name: '👍 Acceptations', value: `${upvotes}`, inline: true },
+        { name: '👎 Refus', value: `${downvotes}`, inline: true },
+        { name: '🛑 Résultat', value: isAccepted === true ? "✅ **Accepté**" : isAccepted === false ? "❌ **Refusé**" : "⚠️ **Égalité - en attente**" }
+      )
+      .setColor(isAccepted === true ? 0x00FF00 : isAccepted === false ? 0xFF0000 : 0xFFFF00)
+      .setTimestamp();
 
-    if (votesUp >= votesDown) {
-      // Logique d'acceptation : création du salon
-      const categoryChannel = interaction.guild.channels.cache.get(process.env.TARGET_CATEGORY_ID);
-      if (!categoryChannel) {
-        return interaction.followUp({
-          content: 'La catégorie cible est introuvable.',
-          ephemeral: true,
+    // Pour un emoji accepté, on tente de l'ajouter au serveur
+    if (type === 'emoji' && isAccepted === true) {
+      try {
+        const response = await axios.get(itemData.url, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data, 'binary');
+
+        const botMember = await interaction.guild.members.fetchMe();
+        if (!botMember.permissions.has(PermissionsBitField.Flags.ManageEmojisAndStickers)) {
+          return interaction.editReply({ content: "❌ Le bot n'a pas la permission **Gérer les Emojis et Stickers**. Vérifiez les permissions." });
+        }
+
+        const existingEmoji = interaction.guild.emojis.cache.find(e => e.name === itemData.name);
+        if (existingEmoji) {
+          return interaction.editReply({ content: `⚠️ L'emoji **${itemData.name}** existe déjà sur le serveur.` });
+        }
+
+        await interaction.guild.emojis.create({ attachment: buffer, name: `fm_${itemData.name}` }); // nom de l'emoji
+
+        await webhookClient.send({
+          content: `# <:fmLogo:1113551418847133777> **Un nouveau emoji est disponible !** 😀\nNom : **${itemData.name}**\nAjoutez-le à vos messages !`,
+          username: 'Eclipsa - FM Requestsᴮᵉᵗᵃ',
         });
+
+      } catch (error) {
+        console.error("❌ Erreur lors de l'ajout de l'emoji :", error);
+        return interaction.editReply({ content: `❌ Erreur lors de l'ajout de l'emoji au serveur. (${error.message})` });
+      }
+    }
+
+    // Pour un meme accepté, création du salon dédié
+    if (type === 'meme' && isAccepted === true) {
+      const category = interaction.guild.channels.cache.get(process.env.MEME_CATEGORY_ID);
+      if (!category) {
+        console.error("❌ Catégorie pour les mèmes introuvable !");
+        return interaction.editReply({ content: "❌ La catégorie des mèmes est introuvable. Vérifiez la configuration." });
       }
 
-      const newChannel = await interaction.guild.channels.create({
-        name: `📁┃${memeData.name}`.slice(0, 100), // Limite à 100 caractères
-        type: 0, // Salon textuel
-        parent: categoryChannel.id,
+      const memeChannel = await interaction.guild.channels.create({
+        name: `📁┃${itemData.name}`,
+        type: ChannelType.GuildText,
+        parent: category.id,
       });
 
-      await newChannel.send(
-        `** Le Nouveau Memes tourᴮᵉᵗᵃ a été validé par les membres !**\nTitre : ${memeData.name}\nDescription : ${memeData.description}`
+      await memeChannel.send(
+        `** Le Nouveau Memes tourᴮᵉᵗᵃ a été validé par les membres !**\nTitre : ${itemData.name}\nDescription : ${itemData.description}`
       );
-      await remove(memeRef);
 
-      return interaction.followUp({
-        content: 'Le meme a été accepté, un salon a été créé, et les messages associés ont été supprimés.',
-        ephemeral: true,
-      });
-    } else {
-      // Logique de refus : suppression du meme et du fichier Cloudinary s'il existe
-      if (memeData.cloudinaryPublicId) {
-        await cloudinary.uploader.destroy(memeData.cloudinaryPublicId);
-      }
-
-      await remove(memeRef);
-
-      return interaction.followUp({
-        content: 'Le meme a été refusé et supprimé.',
-        ephemeral: true,
+      await webhookClient.send({
+        content: `# <:fmLogo:1113551418847133777> **Nouveau Memes tour disponible !** 🖼️\n📢 Rendez-vous dans <#${memeChannel.id}> pour le découvrir !`,
+        username: 'Eclipsa -FM Requestsᴮᵉᵗᵃ',
       });
     }
+
+    // Suppression du message initial de la demande
+    const message = await interaction.channel.messages.fetch(interaction.message.id);
+    await message.delete();
+
+    // Mise à jour dans Firebase pour marquer la demande comme terminée
+    await update(itemRef, { status: 'terminé' });
+
+    await interaction.channel.send({ embeds: [closureEmbed] });
+    return interaction.editReply({ content: `✅ Clôture réussie.`, ephemeral: true });
+
   } catch (error) {
-    console.error('Erreur lors de la fermeture manuelle :', error);
-
-    // Vérifier si une réponse a déjà été envoyée
-    if (interaction.deferred || interaction.replied) {
-      try {
-        await interaction.followUp({
-          content: 'Une erreur est survenue lors de la fermeture manuelle.',
-          ephemeral: true,
-        });
-      } catch (replyError) {
-        console.error('Impossible de répondre à l’interaction après une erreur :', replyError);
-      }
-    } else {
-      try {
-        await interaction.reply({
-          content: 'Une erreur est survenue lors de la fermeture manuelle.',
-          ephemeral: true,
-        });
-      } catch (replyError) {
-        console.error('Impossible de répondre à l’interaction après une erreur :', replyError);
-      }
-    }
+    console.error(`❌ Erreur lors de la clôture du vote (${interaction.customId}) :`, error);
+    await interaction.editReply({ content: "❌ Une erreur est survenue lors de la clôture de cette demande." });
   }
 };
