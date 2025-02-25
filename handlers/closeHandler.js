@@ -1,6 +1,15 @@
+// CloseHandler.js
 const { ref, db, get, update } = require('../utils/firebase');
 const axios = require('axios');
-const { PermissionsBitField, EmbedBuilder, ChannelType, WebhookClient } = require('discord.js');
+const {
+  PermissionsBitField,
+  EmbedBuilder,
+  ChannelType,
+  WebhookClient,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require('discord.js');
 
 module.exports = async (interaction) => {
   try {
@@ -59,7 +68,7 @@ module.exports = async (interaction) => {
       .setColor(isAccepted === true ? 0x00FF00 : isAccepted === false ? 0xFF0000 : 0xFFFF00)
       .setTimestamp();
 
-    // Pour un emoji accepté, on tente de l'ajouter au serveur
+    // Gestion pour les demandes d'emoji acceptées (inchangé)
     if (type === 'emoji' && isAccepted === true) {
       try {
         const response = await axios.get(itemData.url, { responseType: 'arraybuffer' });
@@ -75,8 +84,7 @@ module.exports = async (interaction) => {
           return interaction.editReply({ content: `⚠️ L'emoji **${itemData.name}** existe déjà sur le serveur.` });
         }
 
-        await interaction.guild.emojis.create({ attachment: buffer, name: `fm_${itemData.name}` }); // nom de l'emoji
-
+        await interaction.guild.emojis.create({ attachment: buffer, name: `fm_${itemData.name}` });
         await webhookClient.send({
           content: `# <:fmLogo:1113551418847133777> **Un nouveau emoji est disponible !** 😀\nNom : **${itemData.name}**\nAjoutez-le à vos messages !`,
           username: 'Eclipsa - FM Requestsᴮᵉᵗᵃ',
@@ -88,39 +96,119 @@ module.exports = async (interaction) => {
       }
     }
 
-    // Pour un meme accepté, création du salon dédié
+    // Pour une demande de mème acceptée, demander une confirmation avant de créer le salon dédié
     if (type === 'meme' && isAccepted === true) {
+      const confirmRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`confirm_close_${uniqueId}`)
+          .setLabel("Confirmer")
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId(`cancel_close_${uniqueId}`)
+          .setLabel("Annuler")
+          .setStyle(ButtonStyle.Secondary)
+      );
+      
+      // Envoyer le message de confirmation en réponse éphémère
+      const replyMessage = await interaction.editReply({
+        content: "Tu es sur.e ? Cette action est irréversible.",
+        components: [confirmRow]
+      });
+      
+      // Filtre : seul l'utilisateur qui a lancé l'action peut répondre
+      const filter = i => i.user.id === userId && 
+                           (i.customId === `confirm_close_${uniqueId}` || i.customId === `cancel_close_${uniqueId}`);
+      
+      try {
+        const confirmationInteraction = await replyMessage.awaitMessageComponent({ filter, time: 15000 });
+        if (confirmationInteraction.customId === `cancel_close_${uniqueId}`) {
+          await confirmationInteraction.update({ content: "Action annulée.", components: [] });
+          return;
+        }
+        // Si confirmé, on met à jour le message
+        await confirmationInteraction.update({ content: "Action confirmée, fermeture en cours...", components: [] });
+      } catch (err) {
+        await interaction.editReply({ content: "Temps écoulé, action annulée.", components: [] });
+        return;
+      }
+      
+      // Création du salon avec des permissions personnalisées (le salon reste désynchronisé de la catégorie)
       const category = interaction.guild.channels.cache.get(process.env.MEME_CATEGORY_ID);
       if (!category) {
         console.error("❌ Catégorie pour les mèmes introuvable !");
         return interaction.editReply({ content: "❌ La catégorie des mèmes est introuvable. Vérifiez la configuration." });
       }
-
+      
       const memeChannel = await interaction.guild.channels.create({
         name: `📁┃${itemData.name}`,
         type: ChannelType.GuildText,
         parent: category.id,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.roles.everyone.id,
+            deny: [PermissionsBitField.Flags.ViewChannel],
+          },
+          {
+            // Ajout d'une permission spécifique pour le bot afin qu'il puisse gérer le salon
+            // Le flag "ManageChannels" autorise le bot à gérer les permissions (équivalent à "Gérer les permissions")
+            id: interaction.guild.members.me.id,
+            allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages,
+              PermissionsBitField.Flags.EmbedLinks,
+              PermissionsBitField.Flags.ManageChannels
+            ],
+          },
+          {
+            // Ajout d'une permission spécifique pour le rôle défini dans l'environnement
+            // Ce rôle se verra accorder les mêmes permissions que le bot
+            id: process.env.MEME_TOUR_ROLE_ID,
+            allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages,
+              PermissionsBitField.Flags.EmbedLinks,
+              PermissionsBitField.Flags.ManageChannels,
+              PermissionsBitField.Flags.ReadMessageHistory
+            ],
+          }
+        ],
       });
+      // Le salon reste désynchronisé pour conserver ses permissions personnalisées
 
-      await memeChannel.send(
-        `** Le Nouveau Memes tourᴮᵉᵗᵃ a été validé par les membres !**\nTitre : ${itemData.name}\nDescription : ${itemData.description}`
+      // Envoi d'un message d'acceptation dans le nouveau salon
+      await memeChannel.send(`** Le Nouveau Memes tourᴮᵉᵗᵃ a été validé par les membres !**\nTitre : ${itemData.name}\nDescription : ${itemData.description}`);
+      
+      // Envoi d'un message avec un bouton "Ouvrir au public"
+      const openRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`openPublic_${memeChannel.id}`)
+          .setLabel("Ouvrir au public")
+          .setStyle(ButtonStyle.Primary)
       );
-
+      await memeChannel.send({
+        content: "Cliquez sur le bouton ci-dessous pour ouvrir ce salon au public.",
+        components: [openRow],
+      });
+      
       await webhookClient.send({
         content: `# <:fmLogo:1113551418847133777> **Nouveau Memes tour disponible !** 🖼️\n📢 Rendez-vous dans <#${memeChannel.id}> pour le découvrir !`,
         username: 'Eclipsa -FM Requestsᴮᵉᵗᵃ',
       });
     }
 
-    // Suppression du message initial de la demande
-    const message = await interaction.channel.messages.fetch(interaction.message.id);
-    await message.delete();
+    // Suppression du message initial de la demande (on enveloppe cette action dans un try/catch pour éviter l'erreur Missing Access)
+    try {
+      const originalMessage = await interaction.channel.messages.fetch(interaction.message.id);
+      await originalMessage.delete();
+    } catch (err) {
+      console.error("Erreur lors de la suppression du message initial :", err);
+    }
 
     // Mise à jour dans Firebase pour marquer la demande comme terminée
     await update(itemRef, { status: 'terminé' });
 
     await interaction.channel.send({ embeds: [closureEmbed] });
-    return interaction.editReply({ content: `✅ Clôture réussie.`, ephemeral: true });
+    return interaction.editReply({ content: `✅ Clôture réussie.`, ephemeral: true, components: [] });
 
   } catch (error) {
     console.error(`❌ Erreur lors de la clôture du vote (${interaction.customId}) :`, error);

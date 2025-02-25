@@ -1,9 +1,13 @@
-const { ref, db, get, type, update } = require('../utils/firebase');
+// handlers/VoteHandler.js
+const { ref, db, get, update } = require('../utils/firebase');
 
 // Système de cooldown
 const voteCooldowns = new Map();
-const COOLDOWN_TIME = 3000; // durée du cooldown en millisecondes (ici 3 secondes)
+const COOLDOWN_TIME = 3000; // 3 secondes
 const GIF_URL = "https://cdn.discordapp.com/attachments/1312465047280156772/1336338156521525341/doucement.gif?ex=67a37164&is=67a21fe4&hm=b91b17e14687b226e576673566f51e28fc7e122f4e54ad4e44c07c8115f500b0&";
+
+// Import du gestionnaire de clôture
+const { closeRequest } = require('../utils/closureManager');
 
 module.exports = async (interaction) => {
   try {
@@ -119,6 +123,21 @@ module.exports = async (interaction) => {
         : `Votre vote a été retiré.`,
       ephemeral: true,
     });
+
+    // Déclenche la clôture si un des compteurs atteint le seuil requis
+    if (currentVotes.upvotes >= parseInt(process.env.REQUIRED_VOTES, 10) ||
+        currentVotes.downvotes >= parseInt(process.env.REQUIRED_VOTES, 10)) {
+      console.log(`✅ Seuil de votes atteint pour l'élément ${uniqueId} (${type}). Clôture immédiate.`);
+      await closeRequest({
+        guild: interaction.guild,
+        channel: interaction.channel,
+        message, // message d'origine à supprimer (si trouvé)
+        type,
+        uniqueId,
+        itemData,
+        currentVotes
+      });
+    }
 
   } catch (error) {
     console.error(`❌ Erreur lors du vote (${type}) :`, error);

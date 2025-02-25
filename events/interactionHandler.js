@@ -21,17 +21,14 @@ module.exports = async (client) => {
       } else if (interaction.isButton()) {
         const customId = interaction.customId;
 
-        // Gestion des boutons "approve" et "reject"
         if (customId.startsWith("approve_") || customId.startsWith("reject_")) {
           const voteHandler = require("../handlers/voteHandler");
           await voteHandler(interaction);
         }
-        // Gestion des boutons "close"
         else if (customId.startsWith("close_")) {
           const closeHandler = require("../handlers/closeHandler");
           await closeHandler(interaction);
         }
-        // Gestion des boutons pour le concours de mèmes ("upvote"/"downvote")
         else if (
           customId.startsWith("upvote_") ||
           customId.startsWith("downvote_")
@@ -39,7 +36,18 @@ module.exports = async (client) => {
           const memeVoteHandler = require("../handlers/memeVoteHandler");
           await memeVoteHandler(interaction);
         }
-        // Aucune gestion définie pour d'autres boutons
+        else if (customId.startsWith("openPublic_")) {
+          const openPublicHandler = require("../handlers/openPublicHandler");
+          await openPublicHandler(interaction);
+        }
+        // Ignorer les interactions de confirmation qui devraient être gérées dans CloseHandler
+        else if (
+          customId.startsWith("confirm_close_") ||
+          customId.startsWith("cancel_close_")
+        ) {
+          // On ignore ces interactions ici, car elles sont déjà traitées par le collector dans CloseHandler
+          return;
+        }
         else {
           console.warn(`Aucune gestion définie pour le bouton : ${customId}`);
         }
